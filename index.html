@@ -98,13 +98,37 @@ function add(fs){
 }
 function thumbFor(it){
   const t=document.createElement('video');
-  t.muted=true;t.preload='auto';t.playsInline=true;t.src=it.url;
-  t.onloadedmetadata=()=>{it.dur=t.duration;t.currentTime=Math.min(1,(t.duration||2)/2)};
-  t.onseeked=()=>{
-    try{const c=document.createElement('canvas');c.width=224;c.height=126;
-      c.getContext('2d').drawImage(t,0,0,224,126);it.thumb=c.toDataURL('image/jpeg',.72);}catch(e){}
-    t.removeAttribute('src');t.load();render();
+  t.muted=true;t.defaultMuted=true;t.playsInline=true;t.preload='auto';
+  t.setAttribute('muted','');t.setAttribute('playsinline','');
+  t.style.cssText='position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none';
+  document.body.appendChild(t);
+  let done=false,to=0;
+  const finish=()=>{
+    if(done)return;done=true;clearTimeout(to);
+    t.removeAttribute('src');t.load();t.remove();
+    it.done=true;render();
   };
+  const snap=()=>{
+    if(done)return;
+    try{
+      const w=t.videoWidth||224,h=t.videoHeight||126;
+      const c=document.createElement('canvas');c.width=224;c.height=Math.round(224*h/w)||126;
+      c.getContext('2d').drawImage(t,0,0,c.width,c.height);
+      it.thumb=c.toDataURL('image/jpeg',.72);
+    }catch(e){}
+    finish();
+  };
+  t.onloadedmetadata=()=>{if(isFinite(t.duration)){it.dur=t.duration;render()}};
+  t.onloadeddata=()=>{
+    const d=t.duration;
+    if(isFinite(d)&&d>0){try{t.currentTime=Math.min(1,d/2)}catch(e){snap()}}
+    else snap();
+  };
+  t.onseeked=snap;
+  t.onerror=finish;
+  to=setTimeout(snap,5000);
+  t.src=it.url;
+  t.load();
 }
 function move(i,d){const j=i+d;if(j<0||j>=items.length)return;[items[i],items[j]]=[items[j],items[i]];render()}
 function render(){
@@ -112,7 +136,7 @@ function render(){
   if(!items.length){list.innerHTML='<div id="empty">まだ動画がありません。上のエリアから追加してください。</div>'}
   items.forEach((it,i)=>{
     const li=document.createElement('li');li.className='it';li.draggable=true;
-    li.innerHTML=`<span class="num">${i+1}</span><div class="th ${it.thumb?'':'ph'}">${it.thumb?'<img alt="">':''}${it.dur?`<b>${fmt(it.dur)}</b>`:''}</div><div class="n"></div><div class="bt"><button data-a="u" aria-label="上へ">↑</button><button data-a="d" aria-label="下へ">↓</button><button data-a="x" aria-label="削除">✕</button></div>`;
+    li.innerHTML=`<span class="num">${i+1}</span><div class="th ${it.thumb||it.done?'':'ph'}">${it.thumb?'<img alt="">':''}${it.dur?`<b>${fmt(it.dur)}</b>`:''}</div><div class="n"></div><div class="bt"><button data-a="u" aria-label="上へ">↑</button><button data-a="d" aria-label="下へ">↓</button><button data-a="x" aria-label="削除">✕</button></div>`;
     if(it.thumb)li.querySelector('img').src=it.thumb;
     li.querySelector('.n').textContent=it.name;
     li.querySelectorAll('button').forEach(b=>b.onclick=()=>{
