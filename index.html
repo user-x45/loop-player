@@ -61,7 +61,76 @@ li.it.drag{opacity:.35}
   <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
   <strong>動画を追加</strong>
   <span>タップして選択、またはドロップ（複数可）</span>
-  <input id="file" type="file" accept="videofunction loadCur(){v.src=items[cur].url;v.play().catch(()=>{})}
+  <input id="file" type="file" accept="video/*" multiple hidden>
+</div>
+
+<div class="head"><h2>プレイリスト</h2><div id="sum"></div></div>
+<ul id="list"></ul>
+
+<button id="play" disabled><svg viewBox="0 0 16 16"><path d="M3 1.8v12.4a.5.5 0 0 0 .76.43l10.2-6.2a.5.5 0 0 0 0-.86L3.76 1.37A.5.5 0 0 0 3 1.8z"/></svg>全画面で再生</button>
+
+<div class="how">
+  解除：<b>画面を長押し</b>、または <b>Esc キーを長押し</b>（約1.5秒、下に進捗バーが出ます）
+  <div class="fine">キーボードロックは Chrome / Edge（デスクトップ）で有効です。動画は端末内で処理され、アップロードされません。</div>
+</div>
+</main>
+
+<div id="stage"><video id="v" playsinline></video><div id="hint"></div><div id="bar"></div></div>
+
+<script>
+const items=[];let cur=0,playing=false,pressT=0,escT=0,barRaf=0,hintT=0,dragIdx=null;
+const $=id=>document.getElementById(id);
+const list=$('list'),play=$('play'),stage=$('stage'),v=$('v'),hint=$('hint'),bar=$('bar'),drop=$('drop'),file=$('file'),sum=$('sum');
+
+drop.onclick=()=>file.click();
+file.onchange=()=>{add(file.files);file.value=''};
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('on')};
+drop.ondragleave=()=>drop.classList.remove('on');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('on');add(e.dataTransfer.files)};
+
+function fmt(s){if(!isFinite(s))return'';s=Math.round(s);const m=Math.floor(s/60),r=s%60;return m+':'+String(r).padStart(2,'0')}
+function add(fs){
+  [...fs].filter(f=>f.type.startsWith('video/')).forEach(f=>{
+    const it={name:f.name,url:URL.createObjectURL(f),thumb:'',dur:0};
+    items.push(it);thumbFor(it);
+  });
+  render();
+}
+function thumbFor(it){
+  const t=document.createElement('video');
+  t.muted=true;t.preload='auto';t.playsInline=true;t.src=it.url;
+  t.onloadedmetadata=()=>{it.dur=t.duration;t.currentTime=Math.min(1,(t.duration||2)/2)};
+  t.onseeked=()=>{
+    try{const c=document.createElement('canvas');c.width=224;c.height=126;
+      c.getContext('2d').drawImage(t,0,0,224,126);it.thumb=c.toDataURL('image/jpeg',.72);}catch(e){}
+    t.removeAttribute('src');t.load();render();
+  };
+}
+function move(i,d){const j=i+d;if(j<0||j>=items.length)return;[items[i],items[j]]=[items[j],items[i]];render()}
+function render(){
+  list.innerHTML='';
+  if(!items.length){list.innerHTML='<div id="empty">まだ動画がありません。上のエリアから追加してください。</div>'}
+  items.forEach((it,i)=>{
+    const li=document.createElement('li');li.className='it';li.draggable=true;
+    li.innerHTML=`<span class="num">${i+1}</span><div class="th ${it.thumb?'':'ph'}">${it.thumb?'<img alt="">':''}${it.dur?`<b>${fmt(it.dur)}</b>`:''}</div><div class="n"></div><div class="bt"><button data-a="u" aria-label="上へ">↑</button><button data-a="d" aria-label="下へ">↓</button><button data-a="x" aria-label="削除">✕</button></div>`;
+    if(it.thumb)li.querySelector('img').src=it.thumb;
+    li.querySelector('.n').textContent=it.name;
+    li.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      const a=b.dataset.a;if(a==='u')move(i,-1);else if(a==='d')move(i,1);else{URL.revokeObjectURL(it.url);items.splice(i,1);render()}
+    });
+    li.ondragstart=e=>{dragIdx=i;li.classList.add('drag');e.dataTransfer.effectAllowed='move'};
+    li.ondragend=()=>{li.classList.remove('drag');dragIdx=null};
+    li.ondragover=e=>e.preventDefault();
+    li.ondrop=e=>{e.preventDefault();if(dragIdx===null||dragIdx===i)return;const [m]=items.splice(dragIdx,1);items.splice(i,0,m);dragIdx=null;render()};
+    list.appendChild(li);
+  });
+  const tot=items.reduce((a,b)=>a+(b.dur||0),0);
+  sum.textContent=items.length?`${items.length}本${tot?' · 合計 '+fmt(tot):''}`:'';
+  play.disabled=!items.length;
+}
+render();
+
+function loadCur(){v.src=items[cur].url;v.play().catch(()=>{})}
 v.onended=()=>{cur=(cur+1)%items.length;loadCur()};
 
 play.onclick=async()=>{
