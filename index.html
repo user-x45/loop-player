@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ループ動画プレイヤー</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
 :root{--tx:#101114;--sub:rgba(60,60,67,.62);--glass:rgba(255,255,255,.4);--gb:rgba(255,255,255,.7);--hl:rgba(255,255,255,.9);--lo:rgba(255,255,255,.12);--sh:rgba(40,60,130,.16);--sep:rgba(60,60,67,.14);--pill:rgba(255,255,255,.85);--ac:#0a84ff;--red:#ff453a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tx:#fff;--sub:rgba(235,235,245,.56);--glass:rgba(255,255,255,.08);--gb:rgba(255,255,255,.16);--hl:rgba(255,255,255,.28);--lo:rgba(255,255,255,.04);--sh:rgba(0,0,0,.5);--sep:rgba(255,255,255,.1);--pill:rgba(255,255,255,.2)}}
@@ -24,7 +25,7 @@ h1{font-size:clamp(34px,9vw,44px);line-height:1.1;font-weight:800;letter-spacing
 #drop{padding:26px 20px;text-align:center;cursor:pointer;transition:transform .25s cubic-bezier(.3,.8,.3,1),box-shadow .25s}
 #drop:hover,#drop.on{transform:scale(1.012);box-shadow:inset 0 1.5px 0 var(--hl),inset 0 -1px 0 var(--lo),0 0 0 3px rgba(10,132,255,.45),0 14px 38px -14px var(--sh)}
 .ico{width:46px;height:46px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,rgba(10,132,255,.9),rgba(0,98,224,.9));box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 8px 18px -6px rgba(10,132,255,.7)}
-.ico svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round}
+.ico i{color:#fff;font-size:19px}
 #drop strong{display:block;font-size:16px;font-weight:600;margin-bottom:3px}
 #drop span{font-size:12.5px;color:var(--sub)}
 #list{list-style:none;margin:0;padding:4px 0;overflow:hidden}
@@ -46,16 +47,24 @@ li.it.over{background:rgba(10,132,255,.14)}
 .bt button:hover{background:var(--pill);color:var(--tx)}
 .bt button[data-a="x"]:hover{color:var(--red)}
 .seg{position:relative;display:grid;grid-template-columns:1fr 1fr;padding:4px;border-radius:999px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
-.seg .pill{cursor:grab;position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:999px;background:var(--pill);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 4px 12px -3px rgba(0,0,0,.2);transition:transform .45s cubic-bezier(.3,1.25,.4,1),scale .35s cubic-bezier(.3,1.3,.4,1),background .3s,box-shadow .3s,backdrop-filter .3s}
+.seg .pill{cursor:grab;position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:999px;background:var(--pill);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 4px 12px -3px rgba(0,0,0,.2);transition:translate .45s cubic-bezier(.3,1.25,.4,1),scale .35s cubic-bezier(.3,1.3,.4,1),background .3s,box-shadow .3s,backdrop-filter .3s}
 .seg{transition:scale .35s cubic-bezier(.3,1.3,.4,1)}
-.seg.hold{scale:1.035}
-.seg.hold .pill{scale:1.2 1.34;cursor:grabbing;background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(1.5px) saturate(190%) brightness(1.18);backdrop-filter:blur(1.5px) saturate(190%) brightness(1.18);box-shadow:inset 0 0 0 1px rgba(0,0,0,.32),inset 3px 0 4px -1px rgba(255,90,90,.45),inset -3px 0 4px -1px rgba(90,170,255,.5),inset 0 7px 10px -7px rgba(255,255,255,.7),inset 0 -7px 10px -7px rgba(255,255,255,.35),0 10px 24px -6px rgba(0,0,0,.4)}
+.seg.hold{scale:1.02}
+.seg.hold .pill{scale:1.05 1.28;cursor:grabbing;background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(1.5px) saturate(190%) brightness(1.18);backdrop-filter:blur(1.5px) saturate(190%) brightness(1.18);box-shadow:inset 0 0 0 1px rgba(0,0,0,.32),inset 3px 0 4px -1px rgba(255,90,90,.45),inset -3px 0 4px -1px rgba(90,170,255,.5),inset 0 7px 10px -7px rgba(255,255,255,.7),inset 0 -7px 10px -7px rgba(255,255,255,.35),0 10px 24px -6px rgba(0,0,0,.4)}
 .seg button{transition:color .2s,opacity .2s}
-.seg[data-m="1"] .pill{transform:translateX(100%)}
+.seg[data-m="1"] .pill{translate:100% 0}
 .seg button{position:relative;z-index:1;border:0;background:transparent;color:var(--sub);font:inherit;font-size:14px;font-weight:600;padding:12px 0;cursor:pointer}
 .seg button.on{color:var(--tx)}
+.seg button i{margin-right:8px;font-size:12px}
+.opt{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:500;-webkit-tap-highlight-color:transparent}
+.opt span i{width:22px;color:var(--sub);margin-right:6px}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.sw{position:relative;flex:none;width:52px;height:32px;border-radius:999px;background:rgba(120,120,128,.32);box-shadow:inset 0 1px 3px rgba(0,0,0,.2);transition:background .25s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.3);transition:transform .3s cubic-bezier(.3,1.3,.4,1)}
+.opt input:checked+.sw{background:#34c759}
+.opt input:checked+.sw::after{transform:translateX(20px)}
 #play{margin-top:12px;width:100%;padding:18px 20px;border:1px solid rgba(255,255,255,.4);border-radius:999px;color:#fff;font:inherit;font-size:17px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(180deg,rgba(64,160,255,.95),rgba(0,104,230,.95));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(0,0,0,.12),0 16px 30px -10px rgba(10,132,255,.75);transition:transform .25s cubic-bezier(.3,.8,.3,1),opacity .2s}
-#play svg{width:14px;height:14px;fill:currentColor}
+#play i{font-size:15px}
 #play:hover:not(:disabled){transform:translateY(-2px) scale(1.01)}
 #play:active:not(:disabled){transform:scale(.98)}
 #play:disabled{opacity:.4;cursor:default}
@@ -77,7 +86,7 @@ li.it.over{background:rgba(10,132,255,.14)}
 <p class="lead">動画を並べて、全画面で順番に、またはシャッフルで再生します。再生中はキーボードをロックします。</p>
 
 <div id="drop" class="glass">
-  <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+  <div class="ico"><i class="fa-solid fa-plus"></i></div>
   <strong>動画を追加</strong>
   <span>タップして選択、またはドロップ（複数可）</span>
   <input id="file" type="file" accept="video/*" multiple hidden>
@@ -87,8 +96,9 @@ li.it.over{background:rgba(10,132,255,.14)}
 <ul id="list" class="glass"></ul>
 
 <div class="lab"><span>再生</span></div>
-<div class="seg glass" id="seg" data-m="0"><i class="pill"></i><button data-m="0" class="on">順番に再生</button><button data-m="1">シャッフル</button></div>
-<button id="play" disabled><svg viewBox="0 0 16 16"><path d="M3 1.8v12.4a.5.5 0 0 0 .76.43l10.2-6.2a.5.5 0 0 0 0-.86L3.76 1.37A.5.5 0 0 0 3 1.8z"/></svg>全画面で再生</button>
+<div class="seg glass" id="seg" data-m="0"><i class="pill"></i><button data-m="0" class="on"><i class="fa-solid fa-repeat"></i>順番に再生</button><button data-m="1"><i class="fa-solid fa-shuffle"></i>シャッフル</button></div>
+<label class="opt glass"><span><i class="fa-solid fa-volume-high"></i>音量を自動で揃える</span><input type="checkbox" id="norm" checked><i class="sw"></i></label>
+<button id="play" disabled><i class="fa-solid fa-play"></i>全画面で再生</button>
 
 <div class="how glass">
   <div class="row"><span class="key">画面を長押し</span><span>約1.5秒で解除</span></div>
@@ -103,6 +113,7 @@ li.it.over{background:rgba(10,132,255,.14)}
 const items=[];let order=[],pos=0,shuffle=false,playing=false,fails=0,pressT=0,escT=0,barRaf=0,hintT=0,dragIdx=null;
 const $=id=>document.getElementById(id);
 const list=$('list'),play=$('play'),stage=$('stage'),v=$('v'),hint=$('hint'),bar=$('bar'),drop=$('drop'),file=$('file'),sum=$('sum'),seg=$('seg');
+const normEl=$('norm');
 
 drop.onclick=()=>file.click();
 file.onchange=()=>{add(file.files);file.value=''};
@@ -134,7 +145,7 @@ seg.addEventListener('pointermove',e=>{
     try{seg.setPointerCapture(e.pointerId)}catch(err){}
   }
   const val=Math.max(0,Math.min(sw,sm*sw+dx));
-  pill.style.transform=`translateX(${val}px)`;
+  pill.style.translate=`${val}px 0`;
   segBtns.forEach((x,i)=>x.classList.toggle('on',i===(val>sw/2?1:0)));
 });
 function endDrag(e){
@@ -146,7 +157,7 @@ function endDrag(e){
   const val=Math.max(0,Math.min(sw,sm*sw+dx));
   pill.style.transitionProperty='';
   setMode(val>sw/2?1:0);
-  pill.style.transform='';
+  pill.style.translate='';
   setTimeout(()=>{dragged=false},0);
 }
 seg.addEventListener('pointerup',endDrag);
@@ -157,8 +168,8 @@ function fmt(s){if(!isFinite(s))return'';s=Math.round(s);const m=Math.floor(s/60
 
 function add(fs){
   [...fs].filter(f=>f.type.startsWith('video/')).forEach(f=>{
-    const it={name:f.name,url:URL.createObjectURL(f),thumb:'',dur:0,done:false};
-    items.push(it);thumbFor(it);
+    const it={name:f.name,file:f,url:URL.createObjectURL(f),thumb:'',dur:0,done:false,gain:1,db:0,an:0};
+    items.push(it);thumbFor(it);enqueue(it);
   });
   render();
 }
@@ -205,7 +216,7 @@ function render(){
   if(!items.length)list.innerHTML='<div id="empty">まだ動画がありません</div>';
   items.forEach((it,i)=>{
     const li=document.createElement('li');li.className='it';li.draggable=true;
-    li.innerHTML=`<span class="num">${String(i+1).padStart(2,'0')}</span><div class="th ${it.thumb||it.done?'':'ph'}">${it.thumb?'<img alt="">':''}</div><div class="meta"><div class="n"></div><div class="d">${it.dur?fmt(it.dur):'&nbsp;'}</div></div><div class="bt"><button data-a="u" aria-label="上へ">↑</button><button data-a="d" aria-label="下へ">↓</button><button data-a="x" aria-label="削除">✕</button></div>`;
+    li.innerHTML=`<span class="num">${String(i+1).padStart(2,'0')}</span><div class="th ${it.thumb||it.done?'':'ph'}">${it.thumb?'<img alt="">':''}</div><div class="meta"><div class="n"></div><div class="d">${metaText(it)}</div></div><div class="bt"><button data-a="u" aria-label="上へ"><i class="fa-solid fa-chevron-up"></i></button><button data-a="d" aria-label="下へ"><i class="fa-solid fa-chevron-down"></i></button><button data-a="x" aria-label="削除"><i class="fa-solid fa-xmark"></i></button></div>`;
     if(it.thumb)li.querySelector('img').src=it.thumb;
     li.querySelector('.n').textContent=it.name;
     li.querySelectorAll('button').forEach(b=>b.onclick=()=>{
@@ -229,6 +240,75 @@ function render(){
 }
 render();
 
+function metaText(it){
+  const a=[];
+  if(it.dur)a.push(fmt(it.dur));
+  if(it.an===1)a.push('音量を解析中…');
+  else if(it.an===2)a.push(`<i class="fa-solid fa-volume-high"></i> ${it.db>0?'+':''}${it.db.toFixed(1)} dB`);
+  else if(it.an===3)a.push('音量は未解析');
+  return a.length?a.join(' · '):'&nbsp;';
+}
+
+let aq=Promise.resolve();
+function enqueue(it){aq=aq.then(()=>analyze(it)).catch(()=>{})}
+async function analyze(it){
+  if(!items.includes(it))return;
+  it.an=1;render();
+  try{
+    if(it.file.size>600*1024*1024)throw new Error('large');
+    const buf=await it.file.arrayBuffer();
+    const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+    const oc=new OAC(1,16000,16000);
+    const ab=await oc.decodeAudioData(buf);
+    const n=ab.length,ch=ab.numberOfChannels,blk=6400;
+    const data=[];
+    for(let c=0;c<ch;c++)data.push(ab.getChannelData(c));
+    const pw=[];let peak=0;
+    for(let i=0;i<n;i+=blk){
+      const e=Math.min(n,i+blk);let sum=0;
+      for(let c=0;c<ch;c++){
+        const d=data[c];
+        for(let j=i;j<e;j++){const x=d[j];sum+=x*x;const a=x<0?-x:x;if(a>peak)peak=a}
+      }
+      pw.push(sum/((e-i)*ch));
+    }
+    let act=pw.filter(p=>p>3.1623e-6);
+    if(!act.length||peak<=0){it.gain=1;it.db=0;it.an=2;render();return}
+    let mean=act.reduce((a,b)=>a+b,0)/act.length;
+    const rel=mean*0.1;
+    const act2=act.filter(p=>p>rel);
+    if(act2.length)mean=act2.reduce((a,b)=>a+b,0)/act2.length;
+    const L=10*Math.log10(mean);
+    let db=Math.max(-18,Math.min(18,-20-L));
+    let lin=Math.pow(10,db/20);
+    if(peak*lin>2.5){lin=2.5/peak;db=20*Math.log10(lin)}
+    it.gain=lin;it.db=db;it.an=2;
+  }catch(err){
+    it.gain=1;it.db=0;it.an=3;
+  }
+  render();
+  if(playing&&items[order[pos]]===it)applyGain();
+}
+
+let actx=null,gnode=null;
+function initAudio(){
+  if(actx)return;
+  const AC=window.AudioContext||window.webkitAudioContext;
+  actx=new AC();
+  const src=actx.createMediaElementSource(v);
+  gnode=actx.createGain();
+  const comp=actx.createDynamicsCompressor();
+  comp.threshold.value=-3;comp.knee.value=3;comp.ratio.value=20;comp.attack.value=.002;comp.release.value=.12;
+  src.connect(gnode);gnode.connect(comp);comp.connect(actx.destination);
+}
+function applyGain(){
+  if(!gnode)return;
+  const it=items[order[pos]];
+  const g=normEl.checked&&it?it.gain:1;
+  gnode.gain.setTargetAtTime(g,actx.currentTime,.01);
+}
+normEl.onchange=applyGain;
+
 function buildOrder(last){
   order=items.map((_,i)=>i);
   if(shuffle){
@@ -237,7 +317,7 @@ function buildOrder(last){
   }
   pos=0;
 }
-function loadCur(){v.src=items[order[pos]].url;v.play().catch(()=>{})}
+function loadCur(){v.src=items[order[pos]].url;applyGain();v.play().catch(()=>{})}
 v.onended=()=>{
   const last=order[pos];pos++;
   if(pos>=order.length)buildOrder(last);
@@ -248,6 +328,7 @@ v.onerror=()=>{if(!playing)return;if(++fails>items.length)return;v.onended()};
 
 play.onclick=async()=>{
   if(!items.length)return;
+  try{initAudio();if(actx.state==='suspended')actx.resume()}catch(e){}
   fails=0;buildOrder(-1);playing=true;stage.classList.add('show');
   try{await stage.requestFullscreen({navigationUI:'hide'})}catch(e){}
   try{if(navigator.keyboard&&navigator.keyboard.lock)await navigator.keyboard.lock()}catch(e){}
