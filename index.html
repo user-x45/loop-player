@@ -337,6 +337,22 @@ function applyGain(){
 }
 normEl.onchange=applyGain;
 
+let wake=null;
+async function lockWake(){
+  if(!navigator.wakeLock)return;
+  try{
+    const w=await navigator.wakeLock.request('screen');
+    wake=w;
+    w.addEventListener('release',()=>{if(wake===w)wake=null});
+  }catch(e){}
+}
+function unlockWake(){
+  if(wake){const w=wake;wake=null;w.release().catch(()=>{})}
+}
+document.addEventListener('visibilitychange',()=>{
+  if(playing&&document.visibilityState==='visible'&&!wake)lockWake();
+});
+
 function buildOrder(last){
   order=items.map((_,i)=>i);
   if(shuffle){
@@ -358,6 +374,7 @@ play.onclick=async()=>{
   if(!items.length)return;
   try{initAudio();if(actx.state==='suspended')actx.resume()}catch(e){}
   clearInterval(gainT);gainT=setInterval(applyGain,50);
+  lockWake();
   fails=0;buildOrder(-1);playing=true;stage.classList.add('show');
   try{await stage.requestFullscreen({navigationUI:'hide'})}catch(e){}
   try{if(navigator.keyboard&&navigator.keyboard.lock)await navigator.keyboard.lock()}catch(e){}
@@ -367,7 +384,7 @@ play.onclick=async()=>{
 };
 
 function stopAll(){
-  playing=false;clearInterval(gainT);clearTimeout(pressT);clearTimeout(escT);clearTimeout(hintT);
+  playing=false;clearInterval(gainT);unlockWake();clearTimeout(pressT);clearTimeout(escT);clearTimeout(hintT);
   cancelAnimationFrame(barRaf);bar.style.width='0';
   v.pause();v.removeAttribute('src');v.load();
   stage.classList.remove('show');hint.style.display='none';
