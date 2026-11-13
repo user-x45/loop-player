@@ -104,8 +104,8 @@ li.it.over{background:rgba(10,132,255,.14)}
 <button id="play" disabled><i class="fa-solid fa-play"></i>全画面で再生</button>
 
 <div class="how glass">
-  <div class="row"><span class="key">画面を長押し</span><span>約2秒で解除</span></div>
-  <div class="row"><span class="key">Esc を長押し</span><span>約2秒で解除</span></div>
+  <div class="row"><span class="key">画面を長押し</span><span>約1.5秒で解除</span></div>
+  <div class="row"><span class="key">Esc を長押し</span><span>約1.5秒で解除</span></div>
   <div class="fine">長押し中は画面下に進捗バーが出ます。キーボードロックは Chrome / Edge（デスクトップ）で有効です。動画は端末内で処理され、アップロードされません。</div>
 </div>
 </main>
@@ -113,7 +113,7 @@ li.it.over{background:rgba(10,132,255,.14)}
 <div id="stage"><video id="v" playsinline></video><div id="hint"></div><div id="bar"></div></div>
 
 <script>
-const HOLD=2000;
+const HOLD=1500;
 const items=[];let order=[],pos=0,shuffle=false,playing=false,fails=0,pressT=0,escT=0,barRaf=0,hintT=0,dragIdx=null;
 const $=id=>document.getElementById(id);
 const list=$('list'),play=$('play'),stage=$('stage'),v=$('v'),hint=$('hint'),bar=$('bar'),drop=$('drop'),file=$('file'),sum=$('sum'),seg=$('seg');
