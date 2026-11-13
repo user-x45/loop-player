@@ -244,7 +244,7 @@ function metaText(it){
   const a=[];
   if(it.dur)a.push(fmt(it.dur));
   if(it.an===1)a.push('音量を解析中…');
-  else if(it.an===2)a.push(`<i class="fa-solid fa-volume-high"></i> ${it.db>0?'+':''}${it.db.toFixed(1)} dB`);
+  else if(it.an===2)a.push(`<i class="fa-solid fa-volume-high"></i> ${it.db>0?'+':''}${it.db.toFixed(1)} dB 平均`);
   else if(it.an===3)a.push('音量は未解析');
   return a.length?a.join(' · '):'&nbsp;';
 }
@@ -260,7 +260,7 @@ async function analyze(it){
     const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
     const oc=new OAC(1,16000,16000);
     const ab=await oc.decodeAudioData(buf);
-    const n=ab.length,ch=ab.numberOfChannels,blk=6400;
+    const n=ab.length,ch=ab.numberOfChannels,blk=1600;
     const data=[];
     for(let c=0;c<ch;c++)data.push(ab.getChannelData(c));
     const pw=[];let peak=0;
@@ -272,17 +272,37 @@ async function analyze(it){
       }
       pw.push(sum/((e-i)*ch));
     }
-    let act=pw.filter(p=>p>3.1623e-6);
-    if(!act.length||peak<=0){it.gain=1;it.db=0;it.an=2;render();return}
-    let mean=act.reduce((a,b)=>a+b,0)/act.length;
-    const rel=mean*0.1;
-    const act2=act.filter(p=>p>rel);
-    if(act2.length)mean=act2.reduce((a,b)=>a+b,0)/act2.length;
-    const L=10*Math.log10(mean);
-    let db=Math.max(-18,Math.min(18,-20-L));
-    let lin=Math.pow(10,db/20);
-    if(peak*lin>2.5){lin=2.5/peak;db=20*Math.log10(lin)}
-    it.gain=lin;it.db=db;it.an=2;
+    const H=pw.length,dd=new Array(H);
+    for(let i=0;i<H;i++){
+      const lo=Math.max(0,i-2),hi=Math.min(H-1,i+1);
+      let m=0;
+      for(let k=lo;k<=hi;k++)m+=pw[k];
+      m/=(hi-lo+1);
+      dd[i]=m>1e-5?Math.max(-18,Math.min(18,-20-10*Math.log10(m))):NaN;
+    }
+    let last=NaN;
+    for(let i=0;i<H;i++){if(!isNaN(dd[i]))last=dd[i];else if(!isNaN(last))dd[i]=last}
+    let nxt=NaN;
+    for(let i=H-1;i>=0;i--){if(!isNaN(dd[i]))nxt=dd[i];else if(!isNaN(nxt))dd[i]=nxt}
+    if(!H||isNaN(dd[0])){it.gain=1;it.db=0;it.env=null;it.an=2;render();return}
+    const mn=new Array(H);
+    for(let i=0;i<H;i++){
+      let low=Infinity;
+      for(let k=Math.max(0,i-6);k<=Math.min(H-1,i+6);k++)if(dd[k]<low)low=dd[k];
+      mn[i]=low;
+    }
+    const env=new Float32Array(H+1);
+    let tot=0;
+    for(let i=0;i<H;i++){
+      const lo=Math.max(0,i-4),hi=Math.min(H-1,i+4);
+      let m=0;
+      for(let k=lo;k<=hi;k++)m+=mn[k];
+      m/=(hi-lo+1);
+      env[i]=Math.pow(10,m/20);
+      tot+=m;
+    }
+    env[H]=env[H-1];
+    it.env=env;it.db=tot/H;it.gain=Math.pow(10,it.db/20);it.an=2;
   }catch(err){
     it.gain=1;it.db=0;it.an=3;
   }
@@ -301,11 +321,20 @@ function initAudio(){
   comp.threshold.value=-3;comp.knee.value=3;comp.ratio.value=20;comp.attack.value=.002;comp.release.value=.12;
   src.connect(gnode);gnode.connect(comp);comp.connect(actx.destination);
 }
+function gainAt(it){
+  if(!normEl.checked||!it)return 1;
+  if(it.env){
+    const p=v.currentTime*10,i0=Math.floor(p);
+    const i=Math.min(it.env.length-1,i0),j=Math.min(it.env.length-1,i0+1);
+    const f=p-i0;
+    return it.env[i]*(1-f)+it.env[j]*f;
+  }
+  return it.gain;
+}
+let gainT=0;
 function applyGain(){
   if(!gnode)return;
-  const it=items[order[pos]];
-  const g=normEl.checked&&it?it.gain:1;
-  gnode.gain.setTargetAtTime(g,actx.currentTime,.01);
+  gnode.gain.setTargetAtTime(gainAt(items[order[pos]]),actx.currentTime,.04);
 }
 normEl.onchange=applyGain;
 
@@ -329,6 +358,7 @@ v.onerror=()=>{if(!playing)return;if(++fails>items.length)return;v.onended()};
 play.onclick=async()=>{
   if(!items.length)return;
   try{initAudio();if(actx.state==='suspended')actx.resume()}catch(e){}
+  clearInterval(gainT);gainT=setInterval(applyGain,50);
   fails=0;buildOrder(-1);playing=true;stage.classList.add('show');
   try{await stage.requestFullscreen({navigationUI:'hide'})}catch(e){}
   try{if(navigator.keyboard&&navigator.keyboard.lock)await navigator.keyboard.lock()}catch(e){}
@@ -338,7 +368,7 @@ play.onclick=async()=>{
 };
 
 function stopAll(){
-  playing=false;clearTimeout(pressT);clearTimeout(escT);clearTimeout(hintT);
+  playing=false;clearInterval(gainT);clearTimeout(pressT);clearTimeout(escT);clearTimeout(hintT);
   cancelAnimationFrame(barRaf);bar.style.width='0';
   v.pause();v.removeAttribute('src');v.load();
   stage.classList.remove('show');hint.style.display='none';
