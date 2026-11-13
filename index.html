@@ -240,7 +240,9 @@ function render(){
   });
   const tot=items.reduce((a,b)=>a+(b.dur||0),0);
   sum.textContent=items.length?`${items.length}本${tot?' · '+fmt(tot):''}`:'';
-  play.disabled=!items.length;
+  const busy=items.some(i=>i.an<2);
+  play.disabled=!items.length||busy;
+  play.innerHTML=busy?`<i class="fa-solid fa-spinner fa-spin"></i>解析中… ${items.filter(i=>i.an>=2).length}/${items.length}`:'<i class="fa-solid fa-play"></i>全画面で再生';
 }
 render();
 
@@ -263,7 +265,7 @@ async function analyze(it){
     const buf=await it.file.arrayBuffer();
     const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
     const oc=new OAC(1,16000,16000);
-    const ab=await oc.decodeAudioData(buf);
+    const ab=await Promise.race([oc.decodeAudioData(buf),new Promise((_,rj)=>setTimeout(()=>rj(new Error('timeout')),90000))]);
     const n=ab.length,ch=ab.numberOfChannels,blk=1600;
     const data=[];
     for(let c=0;c<ch;c++)data.push(ab.getChannelData(c));
